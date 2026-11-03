@@ -1,41 +1,50 @@
-name: Container and IaC Scans
-on: push
+name: DevSecOps Scan
+
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   scan-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build the image
-        run: docker build -f image/Dockerfile -t demo-app .
-      - name: Scan the image (Trivy)
-        run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:latest image \
-            --scanners vuln \
-            --severity HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 1 \
-            demo-app:1.0
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f image/Dockerfile -t demo-app:1.0 .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: demo-app:1.0
+          severity: CRITICAL,HIGH
+          exit-code: '1'
 
   scan-terraform:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Scan infrastructure code (Trivy)
-        run: |
-          docker run --rm -v "$PWD":/project aquasec/trivy:latest config \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            /project/terraform
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan Terraform with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: terraform
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: '1'
 
   scan-kubernetes:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Scan Kubernetes file (Trivy)
-        run: |
-          docker run --rm -v "$PWD":/project aquasec/trivy:latest config \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            /project/kubernetes
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan Kubernetes manifests with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: kubernetes
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: '1'
