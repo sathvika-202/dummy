@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the image
-        run: docker build -t demo-app:1.0 image
+        run: docker build -f image/Dockerfile -t demo-app .
       - name: Scan the image (Trivy)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
