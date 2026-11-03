@@ -1,0 +1,41 @@
+name: Container and IaC Scans
+on: push
+
+jobs:
+  scan-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t demo-app:1.0 image
+      - name: Scan the image (Trivy)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            demo-app:1.0
+
+  scan-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan infrastructure code (Trivy)
+        run: |
+          docker run --rm -v "$PWD":/project aquasec/trivy:latest config \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            /project/terraform
+
+  scan-kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan Kubernetes file (Trivy)
+        run: |
+          docker run --rm -v "$PWD":/project aquasec/trivy:latest config \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            /project/kubernetes
